@@ -1,0 +1,151 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MonitorStatus { DRAFT ACTIVE PAUSED ERROR }
+enum RunStatus { QUEUED RUNNING SUCCEEDED FAILED }
+enum MatchMode { ANY ALL }
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  name         String?
+  monitors     Monitor[]
+  destinations Destination[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Monitor {
+  id              String          @id @default(cuid())
+  userId          String
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String
+  description     String?
+  status          MonitorStatus   @default(DRAFT)
+  schedule        String
+  timezone        String          @default("UTC")
+  keywords        String[]
+  excludeKeywords String[]
+  regexPatterns   String[]
+  matchMode       MatchMode       @default(ANY)
+  languages       String[]
+  lookbackHours   Int             @default(168)
+  maxResults      Int             @default(50)
+  deduplicate     Boolean         @default(true)
+  sources         MonitorSource[]
+  destinations    MonitorDestination[]
+  runs            ExecutionRun[]
+  findings        Finding[]
+  lastRunAt       DateTime?
+  nextRunAt       DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  @@index([userId, status])
+  @@index([nextRunAt])
+}
+
+model SourceProvider {
+  id          String          @id
+  name        String
+  category    String
+  version     String
+  enabled     Boolean         @default(true)
+  config      Json?
+  sources     MonitorSource[]
+  findings    Finding[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model MonitorSource {
+  id          String         @id @default(cuid())
+  monitorId   String
+  monitor     Monitor        @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  providerId  String
+  provider    SourceProvider @relation(fields: [providerId], references: [id])
+  externalKey String?
+  config      Json?
+  createdAt   DateTime       @default(now())
+  @@unique([monitorId, providerId, externalKey])
+}
+
+model Finding {
+  id            String         @id @default(cuid())
+  monitorId     String
+  monitor       Monitor        @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  providerId    String
+  provider      SourceProvider @relation(fields: [providerId], references: [id])
+  externalId    String
+  fingerprint   String
+  title         String
+  url           String
+  githubUrl     String?
+  authors       String[]
+  tags          String[]
+  hitKeywords   String[]
+  publishedAt   DateTime
+  discoveredAt  DateTime       @default(now())
+  raw            Json
+  isRead         Boolean        @default(false)
+  isSaved        Boolean        @default(false)
+  deliveries    Delivery[]
+  @@unique([monitorId, fingerprint])
+  @@index([monitorId, discoveredAt])
+  @@index([providerId, externalId])
+}
+
+model ExecutionRun {
+  id             String     @id @default(cuid())
+  monitorId      String
+  monitor        Monitor    @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  status         RunStatus  @default(QUEUED)
+  startedAt      DateTime?
+  finishedAt     DateTime?
+  sourcesScanned Int        @default(0)
+  itemsScanned   Int        @default(0)
+  findingsCount  Int        @default(0)
+  deliveredCount Int        @default(0)
+  logs           Json?
+  error          String?
+  createdAt      DateTime   @default(now())
+  @@index([monitorId, createdAt])
+}
+
+model Destination {
+  id          String               @id @default(cuid())
+  userId      String
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String
+  name        String
+  config      Json
+  enabled     Boolean              @default(true)
+  monitors    MonitorDestination[]
+  deliveries Delivery[]
+  createdAt   DateTime             @default(now())
+}
+
+model MonitorDestination {
+  monitorId     String
+  monitor       Monitor     @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  destinationId String
+  destination   Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  @@id([monitorId, destinationId])
+}
+
+model Delivery {
+  id            String      @id @default(cuid())
+  findingId     String
+  finding       Finding     @relation(fields: [findingId], references: [id], onDelete: Cascade)
+  destinationId String
+  destination   Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  status        String
+  response      Json?
+  deliveredAt   DateTime?
+  createdAt     DateTime    @default(now())
+}
