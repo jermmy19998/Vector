@@ -1,0 +1,55 @@
+name: Release Vector
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/release.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows-release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify
+        run: |
+          npm run typecheck
+          npm run lint
+
+      - name: Build Windows installer
+        run: npm run desktop
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Read package version
+        id: version
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json | ConvertFrom-Json).version
+          "tag=v$version" >> $env:GITHUB_OUTPUT
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Vector ${{ steps.version.outputs.tag }}
+          generate_release_notes: true
+          make_latest: true
+          files: |
+            release/*.exe
+            release/*.blockmap
