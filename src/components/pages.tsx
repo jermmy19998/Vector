@@ -2,59 +2,997 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { Atom, Braces, CheckCircle2, Dna, ExternalLink, FileSearch, Globe2, GraduationCap, KeyRound, LoaderCircle, Pause, Play, Plus, Radio, Save, Search, Send, Trash2, TrendingUp, Webhook, X, XCircle, Youtube } from "lucide-react";
+import {
+  Atom,
+  Braces,
+  CheckCircle2,
+  Dna,
+  ExternalLink,
+  FileSearch,
+  Globe2,
+  GraduationCap,
+  KeyRound,
+  LoaderCircle,
+  Pause,
+  Play,
+  Plus,
+  Radio,
+  Save,
+  Search,
+  Send,
+  Trash2,
+  TrendingUp,
+  Webhook,
+  X,
+  XCircle,
+  Youtube,
+} from "lucide-react";
 import { providers } from "@/lib/data";
 import { type View } from "./app-shell";
 import { Badge, Button, EmptyState, Metric, PageHeader } from "./ui";
 import { useI18n } from "./i18n";
-import { useVectorStore, type DestinationConfig, type DestinationType, type ExecutionRecord, type MonitorRecord } from "./vector-store";
+import {
+  useVectorStore,
+  type DestinationConfig,
+  type DestinationType,
+  type ExecutionRecord,
+  type MonitorRecord,
+  type SourceSetting,
+} from "./vector-store";
 
-const zh = { overview:"工作区概览", welcome:"欢迎使用 Vector", intro:"连接真实来源并创建持续运行的监控器。", newMonitor:"新建监控器", active:"活跃监控", today:"今日发现", scanned:"已扫描项目", notifications:"已发送通知", noData:"暂无数据", start:"开始自动监控", startBody:"创建监控器后默认请求立即执行一次，之后按照设定时间自动运行。", create:"创建监控器", monitors:"监控器", monitorDesc:"持续监控互联网内容的自动化任务。", search:"搜索监控器...", noMonitors:"还没有监控器", sourceProviders:"来源提供商", sourceDesc:"连接科研互联网中的真实来源。", connect:"连接", disconnect:"断开", connected:"已连接", findings:"发现", noFindings:"暂无发现", findBody:"真实来源执行并命中关键词后，内容会显示在这里。", history:"执行历史", noHistory:"暂无执行请求", historyBody:"这里显示真实的执行请求；只有后台完成抓取后才会出现扫描结果，不生成示例数据。", about:"关于 Vector", platform:"研究信息自动化平台", lab:"灰质医学实验室", company:"深圳灰质科技有限公司", keywords:"关键词", destinations:"通知渠道", settings:"设置", noConfig:"暂无配置", recent:"最近创建", statusActive:"运行中", statusPaused:"已暂停", pause:"暂停", resume:"继续", runNow:"立即执行", requested:"已请求", delete:"删除", requestSent:"执行请求", queued:"已排队，尚未开始", sources:"来源", schedule:"周期", created:"创建时间", noKeywords:"创建监控器后，关键词会集中显示在这里。", noDestinations:"创建监控器并配置通知后，渠道会显示在这里。" };
-const en = { overview:"Workspace overview", welcome:"Welcome to Vector", intro:"Connect real sources and create monitors that keep running.", newMonitor:"New monitor", active:"Active monitors", today:"Today's findings", scanned:"Items scanned", notifications:"Notifications sent", noData:"No data", start:"Start monitoring", startBody:"A new monitor requests one immediate run, then follows its configured schedule.", create:"Create monitor", monitors:"Monitors", monitorDesc:"Automations that continuously monitor internet sources.", search:"Search monitors...", noMonitors:"No monitors yet", sourceProviders:"Source providers", sourceDesc:"Connect real sources from the research internet.", connect:"Connect", disconnect:"Disconnect", connected:"Connected", findings:"Findings", noFindings:"No findings yet", findBody:"Content appears here only after a real source run matches your keywords.", history:"Execution history", noHistory:"No execution requests", historyBody:"This page shows real execution requests. Scan results appear only after a background fetch completes; Vector does not generate sample data.", about:"About Vector", platform:"Research Automation Platform", lab:"Gray Medical Computing Laboratory", company:"Shenzhen Gray Technology Co., Ltd.", keywords:"Keywords", destinations:"Destinations", settings:"Settings", noConfig:"No configuration yet", recent:"Recently created", statusActive:"Active", statusPaused:"Paused", pause:"Pause", resume:"Resume", runNow:"Run now", requested:"Requested", delete:"Delete", requestSent:"Execution request", queued:"Queued, not started", sources:"Sources", schedule:"Schedule", created:"Created", noKeywords:"Keywords appear here after you create a monitor.", noDestinations:"Configured delivery channels appear here after you create a monitor." };
-function useText() { const { language } = useI18n(); return language === "zh" ? zh : en; }
+const zh = {
+  overview: "工作区概览",
+  welcome: "欢迎使用 Vector",
+  intro: "连接真实来源并创建持续运行的监控器。",
+  newMonitor: "新建监控器",
+  active: "活跃监控",
+  today: "今日发现",
+  scanned: "已扫描项目",
+  notifications: "已发送通知",
+  noData: "暂无数据",
+  start: "开始自动监控",
+  startBody: "创建监控器后默认请求立即执行一次，之后按照设定时间自动运行。",
+  create: "创建监控器",
+  monitors: "监控器",
+  monitorDesc: "持续监控互联网内容的自动化任务。",
+  search: "搜索监控器...",
+  noMonitors: "还没有监控器",
+  sourceProviders: "来源提供商",
+  sourceDesc: "连接科研互联网中的真实来源。",
+  connect: "连接",
+  disconnect: "断开",
+  connected: "已连接",
+  findings: "发现",
+  noFindings: "暂无发现",
+  findBody: "真实来源执行并命中关键词后，内容会显示在这里。",
+  history: "执行历史",
+  noHistory: "暂无执行请求",
+  historyBody:
+    "这里显示真实的执行请求；只有后台完成抓取后才会出现扫描结果，不生成示例数据。",
+  about: "关于 Vector",
+  platform: "研究信息自动化平台",
+  lab: "灰质医学计算实验室",
+  company: "深圳灰质科技有限公司",
+  keywords: "关键词",
+  destinations: "通知渠道",
+  settings: "设置",
+  noConfig: "暂无配置",
+  recent: "最近创建",
+  statusActive: "运行中",
+  statusPaused: "已暂停",
+  pause: "暂停",
+  resume: "继续",
+  runNow: "立即执行",
+  requested: "已请求",
+  delete: "删除",
+  requestSent: "执行请求",
+  queued: "已排队，尚未开始",
+  sources: "来源",
+  schedule: "周期",
+  created: "创建时间",
+  noKeywords: "创建监控器后，关键词会集中显示在这里。",
+  noDestinations: "创建监控器并配置通知后，渠道会显示在这里。",
+};
+const en = {
+  overview: "Workspace overview",
+  welcome: "Welcome to Vector",
+  intro: "Connect real sources and create monitors that keep running.",
+  newMonitor: "New monitor",
+  active: "Active monitors",
+  today: "Today's findings",
+  scanned: "Items scanned",
+  notifications: "Notifications sent",
+  noData: "No data",
+  start: "Start monitoring",
+  startBody:
+    "A new monitor requests one immediate run, then follows its configured schedule.",
+  create: "Create monitor",
+  monitors: "Monitors",
+  monitorDesc: "Automations that continuously monitor internet sources.",
+  search: "Search monitors...",
+  noMonitors: "No monitors yet",
+  sourceProviders: "Source providers",
+  sourceDesc: "Connect real sources from the research internet.",
+  connect: "Connect",
+  disconnect: "Disconnect",
+  connected: "Connected",
+  findings: "Findings",
+  noFindings: "No findings yet",
+  findBody:
+    "Content appears here only after a real source run matches your keywords.",
+  history: "Execution history",
+  noHistory: "No execution requests",
+  historyBody:
+    "This page shows real execution requests. Scan results appear only after a background fetch completes; Vector does not generate sample data.",
+  about: "About Vector",
+  platform: "Research Automation Platform",
+  lab: "Gray Medical Computing Laboratory",
+  company: "Shenzhen Gray Technology Co., Ltd.",
+  keywords: "Keywords",
+  destinations: "Destinations",
+  settings: "Settings",
+  noConfig: "No configuration yet",
+  recent: "Recently created",
+  statusActive: "Active",
+  statusPaused: "Paused",
+  pause: "Pause",
+  resume: "Resume",
+  runNow: "Run now",
+  requested: "Requested",
+  delete: "Delete",
+  requestSent: "Execution request",
+  queued: "Queued, not started",
+  sources: "Sources",
+  schedule: "Schedule",
+  created: "Created",
+  noKeywords: "Keywords appear here after you create a monitor.",
+  noDestinations:
+    "Configured delivery channels appear here after you create a monitor.",
+};
+function useText() {
+  const { language } = useI18n();
+  return language === "zh" ? zh : en;
+}
 
-export function OverviewPage({ onCreate, onNavigate }: { onCreate: () => void; onNavigate: (view: View) => void }) {
+export function OverviewPage({
+  onCreate,
+  onNavigate,
+}: {
+  onCreate: () => void;
+  onNavigate: (view: View) => void;
+}) {
   const t = useText();
   const { monitors, hydrated } = useVectorStore();
-  const active = monitors.filter((monitor) => monitor.status === "active").length;
-  return <><PageHeader eyebrow={t.overview} title={t.welcome} description={t.intro} action={<Button onClick={onCreate}><Plus size={14}/>{t.newMonitor}</Button>}/><div className="grid grid-cols-2 gap-3 lg:grid-cols-4"><Metric label={t.active} value={hydrated ? String(active) : "—"} change={t.noData} icon={Radio}/><Metric label={t.today} value="0" change={t.noData} icon={FileSearch} tone="green"/><Metric label={t.scanned} value="0" change={t.noData} icon={TrendingUp}/><Metric label={t.notifications} value="0" change={t.noData} icon={Send} tone="amber"/></div>{monitors.length === 0 ? <div className="mt-6"><EmptyState icon={TrendingUp} title={t.start} body={t.startBody} action={<Button onClick={onCreate}>{t.create}</Button>}/></div> : <section className="mt-6"><div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-medium">{t.recent}</h2><button onClick={() => onNavigate("monitors")} className="text-xs text-indigo-400 hover:text-indigo-300">{t.monitors}</button></div><div className="grid gap-3 lg:grid-cols-2">{monitors.slice(0, 4).map((monitor) => <MonitorSummary key={monitor.id} monitor={monitor}/>)}</div></section>}</>;
+  const active = monitors.filter(
+    (monitor) => monitor.status === "active",
+  ).length;
+  return (
+    <>
+      <PageHeader
+        eyebrow={t.overview}
+        title={t.welcome}
+        description={t.intro}
+        action={
+          <Button onClick={onCreate}>
+            <Plus size={14} />
+            {t.newMonitor}
+          </Button>
+        }
+      />
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Metric
+          label={t.active}
+          value={hydrated ? String(active) : "—"}
+          change={t.noData}
+          icon={Radio}
+        />
+        <Metric
+          label={t.today}
+          value="0"
+          change={t.noData}
+          icon={FileSearch}
+          tone="green"
+        />
+        <Metric
+          label={t.scanned}
+          value="0"
+          change={t.noData}
+          icon={TrendingUp}
+        />
+        <Metric
+          label={t.notifications}
+          value="0"
+          change={t.noData}
+          icon={Send}
+          tone="amber"
+        />
+      </div>
+      {monitors.length === 0 ? (
+        <div className="mt-6">
+          <EmptyState
+            icon={TrendingUp}
+            title={t.start}
+            body={t.startBody}
+            action={<Button onClick={onCreate}>{t.create}</Button>}
+          />
+        </div>
+      ) : (
+        <section className="mt-6">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-medium">{t.recent}</h2>
+            <button
+              onClick={() => onNavigate("monitors")}
+              className="text-xs text-indigo-400 hover:text-indigo-300"
+            >
+              {t.monitors}
+            </button>
+          </div>
+          <div className="grid gap-3 lg:grid-cols-2">
+            {monitors.slice(0, 4).map((monitor) => (
+              <MonitorSummary key={monitor.id} monitor={monitor} />
+            ))}
+          </div>
+        </section>
+      )}
+    </>
+  );
 }
 
 export function MonitorsPage({ onCreate }: { onCreate: () => void }) {
   const t = useText();
   const { language } = useI18n();
-  const { monitors, toggleMonitor, deleteMonitor, executeMonitor } = useVectorStore();
+  const { monitors, toggleMonitor, deleteMonitor, executeMonitor } =
+    useVectorStore();
   const [query, setQuery] = useStateSafe("");
-  const [runningId,setRunningId]=useState<string|null>(null);
-  const [runMessage,setRunMessage]=useState("");
-  const run=async(id:string)=>{setRunningId(id);setRunMessage("");try{const result=await executeMonitor(id);setRunMessage(language==="zh"?`执行完成：扫描 ${result.scanned} 条，发现 ${result.findings} 条。`:`Completed: ${result.scanned} scanned, ${result.findings} findings.`);}catch(error){setRunMessage(language==="zh"?`执行失败：${error instanceof Error?error.message:"未知错误"}`:`Execution failed: ${error instanceof Error?error.message:"Unknown error"}`);}finally{setRunningId(null);}};
-  const visible = monitors.filter((monitor) => `${monitor.name} ${monitor.description} ${monitor.includeKeywords.join(" ")}`.toLowerCase().includes(query.toLowerCase()));
-  return <><PageHeader title={t.monitors} description={t.monitorDesc} action={<Button onClick={onCreate}><Plus size={14}/>{t.newMonitor}</Button>}/><div className="mb-4 flex h-9 max-w-xs items-center gap-2 rounded-lg border border-zinc-800 px-3 focus-within:border-indigo-500"><Search size={13}/><input value={query} onChange={(event) => setQuery(event.target.value)} className="w-full bg-transparent text-xs outline-none placeholder:text-zinc-600" placeholder={t.search}/></div>{runMessage&&<div className="mb-4 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-xs text-zinc-300">{runMessage}</div>}{monitors.length === 0 ? <EmptyState icon={Radio} title={t.noMonitors} body={t.startBody} action={<Button onClick={onCreate}>{t.create}</Button>}/> : visible.length === 0 ? <EmptyState icon={Search} title={language === "zh" ? "没有搜索结果" : "No search results"} body={language === "zh" ? "请尝试其他名称或关键词。" : "Try another name or keyword."}/> : <div className="space-y-3">{visible.map((monitor) => <article key={monitor.id} className="panel p-5"><div className="flex flex-col gap-5 lg:flex-row lg:items-center"><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h3 className="truncate text-sm font-medium">{monitor.name}</h3><Badge tone={monitor.status === "active" ? "success" : "warning"}>{monitor.status === "active" ? t.statusActive : t.statusPaused}</Badge></div>{monitor.description && <p className="mt-2 line-clamp-2 text-xs leading-5 text-zinc-500">{monitor.description}</p>}<div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-[11px] text-zinc-500"><span>{t.schedule}: {formatSchedule(monitor, language)}</span><span>{t.sources}: {monitor.sourceIds.length + monitor.customSourceUrls.length}</span><span>{t.keywords}: {monitor.includeKeywords.length}</span><span>{t.created}: {formatDate(monitor.createdAt, language)}</span></div></div><div className="flex flex-wrap items-center gap-2"><Button variant="secondary" disabled={monitor.status==="paused"||runningId!==null} onClick={()=>run(monitor.id)}>{runningId===monitor.id?<LoaderCircle size={13} className="animate-spin"/>:<Play size={13}/>} {runningId===monitor.id?(language==="zh"?"执行中":"Running"):t.runNow}</Button><Button variant="ghost" onClick={() => toggleMonitor(monitor.id)}>{monitor.status === "active" ? <Pause size={13}/> : <Play size={13}/>} {monitor.status === "active" ? t.pause : t.resume}</Button><Button variant="danger" onClick={() => { if (window.confirm(language === "zh" ? `确定删除“${monitor.name}”吗？此操作无法撤销。` : `Delete “${monitor.name}”? This cannot be undone.`)) deleteMonitor(monitor.id); }} aria-label={`${t.delete} ${monitor.name}`}><Trash2 size={13}/></Button></div></div></article>)}</div>}</>;
+  const [runningId, setRunningId] = useState<string | null>(null);
+  const [runMessage, setRunMessage] = useState("");
+  const run = async (id: string) => {
+    setRunningId(id);
+    setRunMessage("");
+    try {
+      const result = await executeMonitor(id);
+      setRunMessage(
+        language === "zh"
+          ? `执行完成：扫描 ${result.scanned} 条，发现 ${result.findings} 条。`
+          : `Completed: ${result.scanned} scanned, ${result.findings} findings.`,
+      );
+    } catch (error) {
+      setRunMessage(
+        language === "zh"
+          ? `执行失败：${error instanceof Error ? error.message : "未知错误"}`
+          : `Execution failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+    } finally {
+      setRunningId(null);
+    }
+  };
+  const visible = monitors.filter((monitor) =>
+    `${monitor.name} ${monitor.description} ${monitor.includeKeywords.join(" ")}`
+      .toLowerCase()
+      .includes(query.toLowerCase()),
+  );
+  return (
+    <>
+      <PageHeader
+        title={t.monitors}
+        description={t.monitorDesc}
+        action={
+          <Button onClick={onCreate}>
+            <Plus size={14} />
+            {t.newMonitor}
+          </Button>
+        }
+      />
+      <div className="mb-4 flex h-9 max-w-xs items-center gap-2 rounded-lg border border-zinc-800 px-3 focus-within:border-indigo-500">
+        <Search size={13} />
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          className="w-full bg-transparent text-xs outline-none placeholder:text-zinc-600"
+          placeholder={t.search}
+        />
+      </div>
+      {runMessage && (
+        <div className="mb-4 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-xs text-zinc-300">
+          {runMessage}
+        </div>
+      )}
+      {monitors.length === 0 ? (
+        <EmptyState
+          icon={Radio}
+          title={t.noMonitors}
+          body={t.startBody}
+          action={<Button onClick={onCreate}>{t.create}</Button>}
+        />
+      ) : visible.length === 0 ? (
+        <EmptyState
+          icon={Search}
+          title={language === "zh" ? "没有搜索结果" : "No search results"}
+          body={
+            language === "zh"
+              ? "请尝试其他名称或关键词。"
+              : "Try another name or keyword."
+          }
+        />
+      ) : (
+        <div className="space-y-3">
+          {visible.map((monitor) => (
+            <article key={monitor.id} className="panel p-5">
+              <div className="flex flex-col gap-5 lg:flex-row lg:items-center">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="truncate text-sm font-medium">
+                      {monitor.name}
+                    </h3>
+                    <Badge
+                      tone={monitor.status === "active" ? "success" : "warning"}
+                    >
+                      {monitor.status === "active"
+                        ? t.statusActive
+                        : t.statusPaused}
+                    </Badge>
+                  </div>
+                  {monitor.description && (
+                    <p className="mt-2 line-clamp-2 text-xs leading-5 text-zinc-500">
+                      {monitor.description}
+                    </p>
+                  )}
+                  <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-[11px] text-zinc-500">
+                    <span>
+                      {t.schedule}: {formatSchedule(monitor, language)}
+                    </span>
+                    <span>
+                      {t.sources}:{" "}
+                      {monitor.sourceIds.length +
+                        monitor.customSourceUrls.length}
+                    </span>
+                    <span>
+                      {t.keywords}: {monitor.includeKeywords.length}
+                    </span>
+                    <span>
+                      {t.created}: {formatDate(monitor.createdAt, language)}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    variant="secondary"
+                    disabled={monitor.status === "paused" || runningId !== null}
+                    onClick={() => run(monitor.id)}
+                  >
+                    {runningId === monitor.id ? (
+                      <LoaderCircle size={13} className="animate-spin" />
+                    ) : (
+                      <Play size={13} />
+                    )}{" "}
+                    {runningId === monitor.id
+                      ? language === "zh"
+                        ? "执行中"
+                        : "Running"
+                      : t.runNow}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => toggleMonitor(monitor.id)}
+                  >
+                    {monitor.status === "active" ? (
+                      <Pause size={13} />
+                    ) : (
+                      <Play size={13} />
+                    )}{" "}
+                    {monitor.status === "active" ? t.pause : t.resume}
+                  </Button>
+                  <Button
+                    variant="danger"
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          language === "zh"
+                            ? `确定删除“${monitor.name}”吗？此操作无法撤销。`
+                            : `Delete “${monitor.name}”? This cannot be undone.`,
+                        )
+                      )
+                        deleteMonitor(monitor.id);
+                    }}
+                    aria-label={`${t.delete} ${monitor.name}`}
+                  >
+                    <Trash2 size={13} />
+                  </Button>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </>
+  );
 }
 
 export function SourcesPage() {
   const t = useText();
   const { language } = useI18n();
-  const { connectedSourceIds, toggleSource } = useVectorStore();
+  const {
+    connectedSourceIds,
+    sourceSettings,
+    toggleSource,
+    updateSourceSetting,
+  } = useVectorStore();
   const [query, setQuery] = useStateSafe("");
-  const visible = providers.filter((provider) => `${provider.name} ${provider.description} ${provider.descriptionZh} ${provider.category} ${provider.categoryZh}`.toLowerCase().includes(query.toLowerCase()));
-  return <><PageHeader title={t.sourceProviders} description={t.sourceDesc}/><div className="mb-4 rounded-lg border border-indigo-500/20 bg-indigo-500/5 px-3 py-2 text-[11px] leading-5 text-indigo-300">{language === "zh" ? "已连接来源会加入所有监控器的下一次立即执行；不会删除已有 Findings。" : "Connected sources are included in the next Run now for every monitor; existing Findings are preserved."}</div><div className="mb-5 flex h-9 max-w-xs items-center gap-2 rounded-lg border border-zinc-800 px-3 focus-within:border-indigo-500"><Search size={13}/><input value={query} onChange={(event) => setQuery(event.target.value)} className="w-full bg-transparent text-xs outline-none placeholder:text-zinc-600" placeholder={t.search}/></div><div className="grid auto-rows-fr gap-3 sm:grid-cols-2 xl:grid-cols-3">{visible.map((provider) => { const connected = connectedSourceIds.includes(provider.id); return <div key={provider.id} className="panel flex min-h-56 flex-col p-4"><div className="flex h-10 items-center gap-3"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-900"><provider.icon size={16} style={{color: provider.color}}/></div><div className="min-w-0"><h3 className="truncate text-sm font-medium">{provider.name}</h3><p className="truncate text-[10px] text-zinc-600">{language === "zh" ? provider.categoryZh : provider.category}</p></div>{connected && <span className="ml-auto h-2 w-2 rounded-full bg-emerald-400" title={t.connected}/>}</div><p className="line-clamp-2 mt-4 min-h-10 text-xs leading-5 text-zinc-500">{language === "zh" ? provider.descriptionZh : provider.description}</p><div className="mt-auto border-t border-zinc-800/70 pt-4"><Button variant="secondary" className={connected ? "w-full border-red-500/30 bg-red-500/10 text-red-300 hover:border-red-400/50 hover:bg-red-500/15 hover:text-red-200" : "w-full border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:border-emerald-400/50 hover:bg-emerald-400/15 hover:text-emerald-200"} onClick={() => toggleSource(provider.id)}>{connected ? t.disconnect : t.connect}</Button></div></div>; })}</div>{visible.length === 0 && <EmptyState icon={Search} title={t.noData} body={t.noData}/>}</>;
+  const [configuring, setConfiguring] = useState<string | null>(null);
+  const configurable = new Set(["semantic", "huggingface", "rsshub"]);
+  const isConfigured = (id: string) =>
+    id === "rsshub"
+      ? Boolean(sourceSettings[id]?.baseUrl?.trim())
+      : Boolean(sourceSettings[id]?.apiKey?.trim());
+  const connect = (id: string) => {
+    if (id === "rsshub" && !isConfigured(id)) {
+      setConfiguring(id);
+      return;
+    }
+    toggleSource(id);
+  };
+  const visible = providers.filter((provider) =>
+    `${provider.name} ${provider.description} ${provider.descriptionZh} ${provider.category} ${provider.categoryZh}`
+      .toLowerCase()
+      .includes(query.toLowerCase()),
+  );
+  return (
+    <>
+      <PageHeader title={t.sourceProviders} description={t.sourceDesc} />
+      <div className="mb-4 rounded-lg border border-indigo-500/20 bg-indigo-500/5 px-3 py-2 text-[11px] leading-5 text-indigo-300">
+        {language === "zh"
+          ? "已连接来源会加入所有监控器的下一次立即执行；不会删除已有 Findings。"
+          : "Connected sources are included in the next Run now for every monitor; existing Findings are preserved."}
+      </div>
+      <div className="mb-5 flex h-9 max-w-xs items-center gap-2 rounded-lg border border-zinc-800 px-3 focus-within:border-indigo-500">
+        <Search size={13} />
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          className="w-full bg-transparent text-xs outline-none placeholder:text-zinc-600"
+          placeholder={t.search}
+        />
+      </div>
+      <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {visible.map((provider) => {
+          const connected = connectedSourceIds.includes(provider.id);
+          return (
+            <div key={provider.id} className="panel flex min-h-56 flex-col p-4">
+              <div className="flex h-10 items-center gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-900">
+                  <provider.icon size={16} style={{ color: provider.color }} />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="truncate text-sm font-medium">
+                    {provider.name}
+                  </h3>
+                  <p className="truncate text-[10px] text-zinc-600">
+                    {language === "zh"
+                      ? provider.categoryZh
+                      : provider.category}
+                  </p>
+                </div>
+                {connected && (
+                  <span
+                    className="ml-auto h-2 w-2 rounded-full bg-emerald-400"
+                    title={t.connected}
+                  />
+                )}
+              </div>
+              <p className="line-clamp-2 mt-4 min-h-10 text-xs leading-5 text-zinc-500">
+                {language === "zh"
+                  ? provider.descriptionZh
+                  : provider.description}
+              </p>
+              {configurable.has(provider.id) && (
+                <button
+                  type="button"
+                  onClick={() => setConfiguring(provider.id)}
+                  className="mt-3 flex h-8 items-center justify-between rounded-lg border border-zinc-800 px-2.5 text-[11px] text-zinc-400 hover:border-zinc-700 hover:text-zinc-200"
+                >
+                  <span className="inline-flex items-center gap-1.5">
+                    <KeyRound size={12} />
+                    {language === "zh" ? "配置" : "Configure"}
+                  </span>
+                  <span
+                    className={
+                      isConfigured(provider.id)
+                        ? "text-emerald-400"
+                        : "text-amber-400"
+                    }
+                  >
+                    {isConfigured(provider.id)
+                      ? language === "zh"
+                        ? "已配置"
+                        : "Configured"
+                      : language === "zh"
+                        ? "未配置"
+                        : "Not configured"}
+                  </span>
+                </button>
+              )}
+              <div className="mt-auto border-t border-zinc-800/70 pt-4">
+                <Button
+                  variant="secondary"
+                  className={
+                    connected
+                      ? "w-full border-red-500/30 bg-red-500/10 text-red-300 hover:border-red-400/50 hover:bg-red-500/15 hover:text-red-200"
+                      : "w-full border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:border-emerald-400/50 hover:bg-emerald-400/15 hover:text-emerald-200"
+                  }
+                  onClick={() => connect(provider.id)}
+                >
+                  {connected ? t.disconnect : t.connect}
+                </Button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {visible.length === 0 && (
+        <EmptyState icon={Search} title={t.noData} body={t.noData} />
+      )}
+      {configuring && (
+        <SourceConfigDialog
+          providerId={configuring}
+          setting={sourceSettings[configuring] ?? {}}
+          language={language}
+          close={() => setConfiguring(null)}
+          save={(setting) => {
+            updateSourceSetting(configuring, setting);
+            setConfiguring(null);
+          }}
+        />
+      )}
+    </>
+  );
 }
 
-export function FindingsPage() { const t = useText(); const {language}=useI18n(); const {findings}=useVectorStore(); return <><PageHeader title={t.findings} description={t.findBody}/>{findings.length===0?<EmptyState icon={FileSearch} title={t.noFindings} body={t.findBody}/>:<div className="space-y-3">{findings.map(item=><article key={item.id} className="panel p-5"><div className="flex items-start justify-between gap-4"><div className="min-w-0 flex-1"><h3 className="text-sm font-medium leading-6">{item.title}</h3><div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-zinc-500"><SourceMark source={item.source}/><span>{language==="zh"?"抓取":"Fetched"}: {formatDate(item.fetchedAt,language)}</span><span>{language==="zh"?"论文发布日期":"Published"}: {formatDate(item.publishedAt,language)}</span>{item.updatedAt&&<span>{language==="zh"?"更新":"Updated"}: {formatDate(item.updatedAt,language)}</span>}{item.keywords.map(word=><Badge key={word} tone="indigo">{word}</Badge>)}</div>{item.source==="arXiv"&&<div className="mt-4 space-y-3 border-l-2 border-indigo-500/30 pl-4"><div className="text-[11px] font-medium text-indigo-300">{item.category?item.category.replace("cs.","Computer Science > "):null}</div>{item.abstract&&<p className="text-xs leading-6 text-zinc-400">{item.abstract}</p>}{item.citation&&<div className="text-xs text-zinc-400"><span className="text-zinc-600">Cite as: </span>{item.citation}</div>}<div className="flex flex-wrap gap-3 text-[11px]">{item.doi&&<a href={item.doi} target="_blank" rel="noreferrer" className="text-indigo-400 hover:text-indigo-300">DOI ↗</a>}{item.version&&<span className="text-zinc-500">{item.version}</span>}</div></div>}<div className="mt-4 grid gap-3 text-xs sm:grid-cols-3">{item.authors.length>0&&<InfoField label={language==="zh"?"作者":"Authors"} value={item.authors.join(", ")}/>} {item.institutions.length>0&&<InfoField label={language==="zh"?"单位":"Institutions"} value={item.institutions.join(", ")}/>} {item.subjects.length>0&&<InfoField label={language==="zh"?"Subjects / 主题":"Subjects"} value={item.subjects.join(", ")}/>}</div></div><a href={item.url} target="_blank" rel="noreferrer" className="shrink-0 text-zinc-500 hover:text-white"><ExternalLink size={15}/></a></div></article>)}</div>}</>; }
+function SourceConfigDialog({
+  providerId,
+  setting,
+  language,
+  close,
+  save,
+}: {
+  providerId: string;
+  setting: SourceSetting;
+  language: "zh" | "en";
+  close: () => void;
+  save: (setting: SourceSetting) => void;
+}) {
+  const rsshub = providerId === "rsshub";
+  const name =
+    providerId === "semantic"
+      ? "Semantic Scholar"
+      : providerId === "huggingface"
+        ? "Hugging Face"
+        : "RSSHub";
+  const [value, setValue] = useState(
+    rsshub ? (setting.baseUrl ?? "") : (setting.apiKey ?? ""),
+  );
+  const label = rsshub
+    ? language === "zh"
+      ? "完整 Feed / Route URL"
+      : "Complete feed / route URL"
+    : providerId === "semantic"
+      ? "API Key"
+      : "Access Token";
+  const description = rsshub
+    ? language === "zh"
+      ? "RSSHub 不是可搜索论文库。请输入可直接返回 RSS/Atom 的完整地址，例如 https://rsshub.app/arxiv/cs.CV。"
+      : "RSSHub is not a searchable paper database. Enter a complete URL that returns RSS/Atom, for example https://rsshub.app/arxiv/cs.CV."
+    : providerId === "semantic"
+      ? language === "zh"
+        ? "API Key 可提高请求配额；未配置时匿名请求可能返回 429。"
+        : "An API key raises request limits; anonymous requests may return 429."
+      : language === "zh"
+        ? "Token 为可选项，可用于鉴权并减少匿名访问限制。"
+        : "The token is optional and can authenticate requests or reduce anonymous access limits.";
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4"
+      onMouseDown={close}
+    >
+      <section
+        role="dialog"
+        aria-label={`${name} ${label}`}
+        onMouseDown={(event) => event.stopPropagation()}
+        className="w-full max-w-lg rounded-xl border border-zinc-800 bg-[#111113] p-5 shadow-2xl"
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-semibold">{name}</h2>
+            <p className="mt-1 text-[11px] text-zinc-500">{label}</p>
+          </div>
+          <button
+            onClick={close}
+            aria-label={language === "zh" ? "关闭" : "Close"}
+            className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-900 hover:text-white"
+          >
+            <X size={15} />
+          </button>
+        </div>
+        <p className="mt-4 text-xs leading-5 text-zinc-400">{description}</p>
+        <label className="mt-5 block text-[11px] text-zinc-500">
+          {label}
+          <input
+            autoFocus
+            type={rsshub ? "url" : "password"}
+            value={value}
+            onChange={(event) => setValue(event.target.value)}
+            placeholder={
+              rsshub
+                ? "https://rsshub.app/arxiv/cs.CV"
+                : providerId === "semantic"
+                  ? "Semantic Scholar API Key"
+                  : "hf_..."
+            }
+            className="mt-2 h-10 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 text-xs text-zinc-200 outline-none placeholder:text-zinc-700 focus:border-indigo-500"
+          />
+        </label>
+        <div className="mt-5 flex justify-end gap-2">
+          <Button variant="secondary" onClick={close}>
+            {language === "zh" ? "取消" : "Cancel"}
+          </Button>
+          <Button
+            disabled={!value.trim()}
+            onClick={() =>
+              save(
+                rsshub ? { baseUrl: value.trim() } : { apiKey: value.trim() },
+              )
+            }
+          >
+            <Save size={13} />
+            {language === "zh" ? "保存" : "Save"}
+          </Button>
+        </div>
+      </section>
+    </div>
+  );
+}
 
-function SourceMark({ source }: { source:string }) { const normalized=source.toLowerCase(); const Icon=normalized.includes("arxiv")?Atom:normalized.includes("pubmed")?Dna:normalized.includes("openreview")?GraduationCap:normalized.includes("youtube")?Youtube:normalized.includes("crossref")?Braces:Radio; return <span className="inline-flex items-center gap-1.5 rounded-md border border-zinc-800 bg-zinc-900/70 px-1.5 py-1 text-zinc-300"><Icon size={12}/>{source}</span>; }
+export function FindingsPage() {
+  const t = useText();
+  const { language } = useI18n();
+  const { findings } = useVectorStore();
+  return (
+    <>
+      <PageHeader title={t.findings} description={t.findBody} />
+      {findings.length === 0 ? (
+        <EmptyState icon={FileSearch} title={t.noFindings} body={t.findBody} />
+      ) : (
+        <div className="space-y-3">
+          {findings.map((item) => (
+            <article key={item.id} className="panel p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-medium leading-6">
+                    {item.title}
+                  </h3>
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-zinc-500">
+                    <SourceMark source={item.source} />
+                    <span>
+                      {language === "zh" ? "抓取" : "Fetched"}:{" "}
+                      {formatDate(item.fetchedAt, language)}
+                    </span>
+                    <span>
+                      {language === "zh" ? "论文发布日期" : "Published"}:{" "}
+                      {formatDate(item.publishedAt, language)}
+                    </span>
+                    {item.updatedAt && (
+                      <span>
+                        {language === "zh" ? "更新" : "Updated"}:{" "}
+                        {formatDate(item.updatedAt, language)}
+                      </span>
+                    )}
+                    {item.keywords.map((word) => (
+                      <Badge key={word} tone="indigo">
+                        {word}
+                      </Badge>
+                    ))}
+                  </div>
+                  {item.source === "arXiv" && (
+                    <div className="mt-4 space-y-3 border-l-2 border-indigo-500/30 pl-4">
+                      <div className="text-[11px] font-medium text-indigo-300">
+                        {item.category
+                          ? item.category.replace("cs.", "Computer Science > ")
+                          : null}
+                      </div>
+                      {item.abstract && (
+                        <p className="text-xs leading-6 text-zinc-400">
+                          {item.abstract}
+                        </p>
+                      )}
+                      {item.citation && (
+                        <div className="text-xs text-zinc-400">
+                          <span className="text-zinc-600">Cite as: </span>
+                          {item.citation}
+                        </div>
+                      )}
+                      <div className="flex flex-wrap gap-3 text-[11px]">
+                        {item.doi && (
+                          <a
+                            href={item.doi}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-indigo-400 hover:text-indigo-300"
+                          >
+                            DOI ↗
+                          </a>
+                        )}
+                        {item.version && (
+                          <span className="text-zinc-500">{item.version}</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  <div className="mt-4 grid gap-3 text-xs sm:grid-cols-3">
+                    {item.authors.length > 0 && (
+                      <InfoField
+                        label={language === "zh" ? "作者" : "Authors"}
+                        value={item.authors.join(", ")}
+                      />
+                    )}{" "}
+                    {item.institutions.length > 0 && (
+                      <InfoField
+                        label={language === "zh" ? "单位" : "Institutions"}
+                        value={item.institutions.join(", ")}
+                      />
+                    )}{" "}
+                    {item.subjects.length > 0 && (
+                      <InfoField
+                        label={
+                          language === "zh" ? "Subjects / 主题" : "Subjects"
+                        }
+                        value={item.subjects.join(", ")}
+                      />
+                    )}
+                  </div>
+                </div>
+                <a
+                  href={item.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="shrink-0 text-zinc-500 hover:text-white"
+                >
+                  <ExternalLink size={15} />
+                </a>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
 
-function InfoField({label,value}:{label:string;value:string}) { return <div><div className="text-[10px] text-zinc-600">{label}</div><div className="mt-1 line-clamp-2 leading-5 text-zinc-400">{value}</div></div>; }
-export function HistoryPage() { const t = useText(); const {language}=useI18n(); const {executions}=useVectorStore(); const [selected,setSelected]=useState<ExecutionRecord|null>(null); return <><PageHeader title={t.history} description={t.historyBody}/>{executions.length===0?<EmptyState icon={TrendingUp} title={t.noHistory} body={t.historyBody}/>:<div className="space-y-3">{executions.map(item=><button key={item.id} onClick={()=>setSelected(item)} className="panel block w-full p-5 text-left transition hover:border-zinc-600"><div className="flex items-center gap-4"><div className="min-w-0 flex-1"><h3 className="truncate text-sm font-medium">{item.monitorName}</h3><p className="mt-1 text-[11px] text-zinc-500">{formatDate(item.finishedAt,language)} · {language==="zh"?`扫描 ${item.scanned} 条 · 发现 ${item.findings} 条`:`${item.scanned} scanned · ${item.findings} findings`}</p></div><Badge tone={item.status==="success"?"success":item.status==="partial"?"warning":"neutral"}>{item.status==="success"?(language==="zh"?"成功":"Success"):item.status==="partial"?(language==="zh"?"部分成功":"Partial"):(language==="zh"?"失败":"Failed")}</Badge></div></button>)}</div>}{selected&&<ExecutionDetail execution={selected} language={language} close={()=>setSelected(null)}/>}</>; }
+function SourceMark({ source }: { source: string }) {
+  const normalized = source.toLowerCase();
+  const Icon = normalized.includes("arxiv")
+    ? Atom
+    : normalized.includes("pubmed")
+      ? Dna
+      : normalized.includes("openreview")
+        ? GraduationCap
+        : normalized.includes("youtube")
+          ? Youtube
+          : normalized.includes("crossref")
+            ? Braces
+            : Radio;
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-md border border-zinc-800 bg-zinc-900/70 px-1.5 py-1 text-zinc-300">
+      <Icon size={12} />
+      {source}
+    </span>
+  );
+}
 
-function ExecutionDetail({ execution, language, close }: { execution: ExecutionRecord; language:"zh"|"en"; close:()=>void }) {
-  const success=execution.status==="success";
-  const partial=execution.status==="partial";
-  const title=success?(language==="zh"?"执行成功":"Execution succeeded"):partial?(language==="zh"?"部分成功":"Partially completed"):(language==="zh"?"执行失败":"Execution failed");
-  const statusText=success?(language==="zh"?"成功":"Success"):partial?(language==="zh"?"部分成功":"Partial"):(language==="zh"?"失败":"Failed");
-  const duration=Math.max(0,new Date(execution.finishedAt).getTime()-new Date(execution.startedAt).getTime());
-  return <div className="fixed inset-0 z-50 flex justify-end bg-black/55" onMouseDown={close}><aside role="dialog" aria-label={title} onMouseDown={event=>event.stopPropagation()} className="h-full w-full max-w-md overflow-y-auto border-l border-zinc-800 bg-[#111113] p-6 shadow-2xl"><div className="flex items-center justify-between"><div className="flex items-center gap-3">{success?<CheckCircle2 className="text-emerald-400" size={20}/>:<XCircle className={partial?"text-amber-400":"text-red-400"} size={20}/>}<h2 className="text-base font-semibold">{title}</h2></div><button aria-label={language==="zh"?"关闭":"Close"} onClick={close} className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-900 hover:text-white"><X size={16}/></button></div><div className="mt-6 rounded-xl border border-zinc-800 bg-zinc-900/40 p-4"><div className="text-xs font-medium">{execution.monitorName}</div><div className="mt-2 text-[11px] text-zinc-500">{statusText}</div></div><div className="mt-5 grid grid-cols-2 gap-3">{[[language==="zh"?"开始时间":"Started",formatDate(execution.startedAt,language)],[language==="zh"?"结束时间":"Finished",formatDate(execution.finishedAt,language)],[language==="zh"?"执行耗时":"Duration",`${duration} ms`],[language==="zh"?"扫描条数":"Scanned",String(execution.scanned)],[language==="zh"?"发现条数":"Findings",String(execution.findings)],[language==="zh"?"错误数":"Errors",String(execution.errors.length)]].map(([label,value])=><div key={label} className="rounded-lg border border-zinc-800 p-3"><div className="text-[10px] text-zinc-600">{label}</div><div className="mt-1 text-xs text-zinc-200">{value}</div></div>)}</div><section className="mt-6"><h3 className="text-xs font-medium">{language==="zh"?"错误日志":"Error log"}</h3>{execution.errors.length===0?<p className="mt-2 text-xs text-zinc-600">{language==="zh"?"没有错误":"No errors"}</p>:<div className="mt-2 space-y-2">{execution.errors.map(error=><pre key={error} className="overflow-x-auto whitespace-pre-wrap rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-[11px] leading-5 text-red-300">{error}</pre>)}</div>}</section></aside></div>;
+function InfoField({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-[10px] text-zinc-600">{label}</div>
+      <div className="mt-1 line-clamp-2 leading-5 text-zinc-400">{value}</div>
+    </div>
+  );
+}
+export function HistoryPage() {
+  const t = useText();
+  const { language } = useI18n();
+  const { executions } = useVectorStore();
+  const [selected, setSelected] = useState<ExecutionRecord | null>(null);
+  return (
+    <>
+      <PageHeader title={t.history} description={t.historyBody} />
+      {executions.length === 0 ? (
+        <EmptyState
+          icon={TrendingUp}
+          title={t.noHistory}
+          body={t.historyBody}
+        />
+      ) : (
+        <div className="space-y-3">
+          {executions.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setSelected(item)}
+              className="panel block w-full p-5 text-left transition hover:border-zinc-600"
+            >
+              <div className="flex items-center gap-4">
+                <div className="min-w-0 flex-1">
+                  <h3 className="truncate text-sm font-medium">
+                    {item.monitorName}
+                  </h3>
+                  <p className="mt-1 text-[11px] text-zinc-500">
+                    {formatDate(item.finishedAt, language)} ·{" "}
+                    {language === "zh"
+                      ? `扫描 ${item.scanned} 条 · 发现 ${item.findings} 条`
+                      : `${item.scanned} scanned · ${item.findings} findings`}
+                  </p>
+                </div>
+                <Badge
+                  tone={
+                    item.status === "success"
+                      ? "success"
+                      : item.status === "partial"
+                        ? "warning"
+                        : "neutral"
+                  }
+                >
+                  {item.status === "success"
+                    ? language === "zh"
+                      ? "成功"
+                      : "Success"
+                    : item.status === "partial"
+                      ? language === "zh"
+                        ? "部分成功"
+                        : "Partial"
+                      : language === "zh"
+                        ? "失败"
+                        : "Failed"}
+                </Badge>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+      {selected && (
+        <ExecutionDetail
+          execution={selected}
+          language={language}
+          close={() => setSelected(null)}
+        />
+      )}
+    </>
+  );
+}
+
+function ExecutionDetail({
+  execution,
+  language,
+  close,
+}: {
+  execution: ExecutionRecord;
+  language: "zh" | "en";
+  close: () => void;
+}) {
+  const success = execution.status === "success";
+  const partial = execution.status === "partial";
+  const title = success
+    ? language === "zh"
+      ? "执行成功"
+      : "Execution succeeded"
+    : partial
+      ? language === "zh"
+        ? "部分成功"
+        : "Partially completed"
+      : language === "zh"
+        ? "执行失败"
+        : "Execution failed";
+  const statusText = success
+    ? language === "zh"
+      ? "成功"
+      : "Success"
+    : partial
+      ? language === "zh"
+        ? "部分成功"
+        : "Partial"
+      : language === "zh"
+        ? "失败"
+        : "Failed";
+  const duration = Math.max(
+    0,
+    new Date(execution.finishedAt).getTime() -
+      new Date(execution.startedAt).getTime(),
+  );
+  return (
+    <div
+      className="fixed inset-0 z-50 flex justify-end bg-black/55"
+      onMouseDown={close}
+    >
+      <aside
+        role="dialog"
+        aria-label={title}
+        onMouseDown={(event) => event.stopPropagation()}
+        className="h-full w-full max-w-md overflow-y-auto border-l border-zinc-800 bg-[#111113] p-6 shadow-2xl"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {success ? (
+              <CheckCircle2 className="text-emerald-400" size={20} />
+            ) : (
+              <XCircle
+                className={partial ? "text-amber-400" : "text-red-400"}
+                size={20}
+              />
+            )}
+            <h2 className="text-base font-semibold">{title}</h2>
+          </div>
+          <button
+            aria-label={language === "zh" ? "关闭" : "Close"}
+            onClick={close}
+            className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-900 hover:text-white"
+          >
+            <X size={16} />
+          </button>
+        </div>
+        <div className="mt-6 rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+          <div className="text-xs font-medium">{execution.monitorName}</div>
+          <div className="mt-2 text-[11px] text-zinc-500">{statusText}</div>
+        </div>
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          {[
+            [
+              language === "zh" ? "开始时间" : "Started",
+              formatDate(execution.startedAt, language),
+            ],
+            [
+              language === "zh" ? "结束时间" : "Finished",
+              formatDate(execution.finishedAt, language),
+            ],
+            [language === "zh" ? "执行耗时" : "Duration", `${duration} ms`],
+            [
+              language === "zh" ? "扫描条数" : "Scanned",
+              String(execution.scanned),
+            ],
+            [
+              language === "zh" ? "发现条数" : "Findings",
+              String(execution.findings),
+            ],
+            [
+              language === "zh" ? "错误数" : "Errors",
+              String(execution.errors.length),
+            ],
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-lg border border-zinc-800 p-3">
+              <div className="text-[10px] text-zinc-600">{label}</div>
+              <div className="mt-1 text-xs text-zinc-200">{value}</div>
+            </div>
+          ))}
+        </div>
+        <section className="mt-6">
+          <h3 className="text-xs font-medium">
+            {language === "zh" ? "错误日志" : "Error log"}
+          </h3>
+          {execution.errors.length === 0 ? (
+            <p className="mt-2 text-xs text-zinc-600">
+              {language === "zh" ? "没有错误" : "No errors"}
+            </p>
+          ) : (
+            <div className="mt-2 space-y-2">
+              {execution.errors.map((error) => (
+                <pre
+                  key={error}
+                  className="overflow-x-auto whitespace-pre-wrap rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-[11px] leading-5 text-red-300"
+                >
+                  {error}
+                </pre>
+              ))}
+            </div>
+          )}
+        </section>
+      </aside>
+    </div>
+  );
 }
 
 export function PlaceholderPage({ type }: { type: string }) {
@@ -62,47 +1000,473 @@ export function PlaceholderPage({ type }: { type: string }) {
   const { language } = useI18n();
   const { monitors, updateKeywords, updateDestinations } = useVectorStore();
   if (type === "keywords") {
-    return <><PageHeader title={t.keywords} description={language === "zh" ? "按监控器编辑包含关键词、排除关键词和正则表达式。" : "Edit include keywords, exclude keywords, and Regex per monitor."}/>{monitors.length === 0 ? <EmptyState icon={KeyRound} title={t.noConfig} body={t.noKeywords}/> : <div className="space-y-3">{monitors.map((monitor) => <KeywordEditor key={monitor.id} monitor={monitor} language={language} onSave={updateKeywords}/>)}</div>}</>;
+    return (
+      <>
+        <PageHeader
+          title={t.keywords}
+          description={
+            language === "zh"
+              ? "按监控器编辑包含关键词、排除关键词和正则表达式。"
+              : "Edit include keywords, exclude keywords, and Regex per monitor."
+          }
+        />
+        {monitors.length === 0 ? (
+          <EmptyState icon={KeyRound} title={t.noConfig} body={t.noKeywords} />
+        ) : (
+          <div className="space-y-3">
+            {monitors.map((monitor) => (
+              <KeywordEditor
+                key={monitor.id}
+                monitor={monitor}
+                language={language}
+                onSave={updateKeywords}
+              />
+            ))}
+          </div>
+        )}
+      </>
+    );
   }
   if (type === "destinations") {
-    return <><PageHeader title={t.destinations} description={language === "zh" ? "按监控器选择通知渠道并保存接收地址。" : "Select delivery channels and save their recipient per monitor."}/>{monitors.length === 0 ? <EmptyState icon={Webhook} title={t.noConfig} body={t.noDestinations}/> : <div className="space-y-3">{monitors.map((monitor) => <DestinationEditor key={monitor.id} monitor={monitor} language={language} onSave={updateDestinations}/>)}</div>}</>;
+    return (
+      <>
+        <PageHeader
+          title={t.destinations}
+          description={
+            language === "zh"
+              ? "按监控器选择通知渠道并保存接收地址。"
+              : "Select delivery channels and save their recipient per monitor."
+          }
+        />
+        {monitors.length === 0 ? (
+          <EmptyState
+            icon={Webhook}
+            title={t.noConfig}
+            body={t.noDestinations}
+          />
+        ) : (
+          <div className="space-y-3">
+            {monitors.map((monitor) => (
+              <DestinationEditor
+                key={monitor.id}
+                monitor={monitor}
+                language={language}
+                onSave={updateDestinations}
+              />
+            ))}
+          </div>
+        )}
+      </>
+    );
   }
-  return <><PageHeader title={t.settings} description={t.settings}/><EmptyState icon={Radio} title={t.noConfig} body={t.noConfig}/></>;
+  return (
+    <>
+      <PageHeader title={t.settings} description={t.settings} />
+      <EmptyState icon={Radio} title={t.noConfig} body={t.noConfig} />
+    </>
+  );
 }
 
-export function AboutPage() { const t = useText(); return <div className="mx-auto max-w-4xl"><PageHeader title={t.about} description={t.platform}/><section className="panel overflow-hidden"><div className="flex min-h-52 items-center justify-center border-b border-zinc-800 bg-black p-8"><Image src="/brand/gray.png" alt="Gray" width={360} height={232} className="max-h-36 w-auto object-contain" priority/></div><div className="p-8"><h2 className="text-xl font-semibold">{t.lab}</h2><p className="mt-2 text-sm text-zinc-400">{t.company}</p><div className="mt-7 border-t border-zinc-800 pt-6"><a href="https://www.gray.org.cn" target="_blank" rel="noreferrer" className="inline-flex h-9 items-center gap-2 rounded-lg bg-zinc-100 px-3.5 text-xs font-medium text-zinc-900"><Globe2 size={14}/>www.gray.org.cn<ExternalLink size={12}/></a></div></div></section></div>; }
+export function AboutPage() {
+  const t = useText();
+  return (
+    <div className="mx-auto max-w-4xl">
+      <PageHeader title={t.about} description={t.platform} />
+      <section className="panel overflow-hidden">
+        <div className="flex min-h-52 items-center justify-center border-b border-zinc-800 bg-black p-8">
+          <Image
+            src="/brand/gray.png"
+            alt="Gray"
+            width={360}
+            height={232}
+            className="max-h-36 w-auto object-contain"
+            priority
+          />
+        </div>
+        <div className="p-8">
+          <h2 className="text-xl font-semibold">{t.lab}</h2>
+          <p className="mt-2 text-sm text-zinc-400">{t.company}</p>
+          <div className="mt-7 border-t border-zinc-800 pt-6">
+            <a
+              href="https://www.gray.org.cn"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex h-9 items-center gap-2 rounded-lg bg-zinc-100 px-3.5 text-xs font-medium text-zinc-900"
+            >
+              <Globe2 size={14} />
+              www.gray.org.cn
+              <ExternalLink size={12} />
+            </a>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
 
-function MonitorSummary({ monitor }: { monitor: MonitorRecord }) { const t = useText(); const { language } = useI18n(); return <div className="panel p-4"><div className="flex items-center justify-between gap-3"><h3 className="truncate text-sm font-medium">{monitor.name}</h3><Badge tone={monitor.status === "active" ? "success" : "warning"}>{monitor.status === "active" ? t.statusActive : t.statusPaused}</Badge></div><div className="mt-3 flex flex-wrap gap-3 text-[11px] text-zinc-500"><span>{formatSchedule(monitor, language)}</span><span>{monitor.sourceIds.length + monitor.customSourceUrls.length} {t.sources}</span><span>{monitor.includeKeywords.length} {t.keywords}</span></div></div>; }
-function formatSchedule(monitor: MonitorRecord, language: "zh" | "en") { const q = (z: string, e: string) => language === "zh" ? z : e; if (monitor.schedule === "hour") return q(`每小时，${monitor.runTime} 起`, `Hourly from ${monitor.runTime}`); if (monitor.schedule === "6h") return q(`每 6 小时，${monitor.runTime} 起`, `Every 6 hours from ${monitor.runTime}`); if (monitor.schedule === "day") return q(`每天 ${monitor.runTime}`, `Daily at ${monitor.runTime}`); if (monitor.schedule === "week") return q(`每周 ${["日","一","二","三","四","五","六"][Number(monitor.weekday)]} ${monitor.runTime}`, `Weekly, day ${monitor.weekday} at ${monitor.runTime}`); if (monitor.schedule === "month") return q(`每月 ${monitor.monthDay} 日 ${monitor.runTime}`, `Monthly, day ${monitor.monthDay} at ${monitor.runTime}`); return `Cron ${monitor.cron}`; }
-function formatDate(value: string | undefined, language: "zh" | "en") { const date=value?new Date(value):null; if(!date || Number.isNaN(date.getTime())) return language==="zh"?"未提供":"Not provided"; return new Intl.DateTimeFormat(language === "zh" ? "zh-CN" : "en-US", { dateStyle:"medium", timeStyle:"short" }).format(date); }
-function useStateSafe(initial: string) { return useState(initial); }
+function MonitorSummary({ monitor }: { monitor: MonitorRecord }) {
+  const t = useText();
+  const { language } = useI18n();
+  return (
+    <div className="panel p-4">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="truncate text-sm font-medium">{monitor.name}</h3>
+        <Badge tone={monitor.status === "active" ? "success" : "warning"}>
+          {monitor.status === "active" ? t.statusActive : t.statusPaused}
+        </Badge>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-3 text-[11px] text-zinc-500">
+        <span>{formatSchedule(monitor, language)}</span>
+        <span>
+          {monitor.sourceIds.length + monitor.customSourceUrls.length}{" "}
+          {t.sources}
+        </span>
+        <span>
+          {monitor.includeKeywords.length} {t.keywords}
+        </span>
+      </div>
+    </div>
+  );
+}
+function formatSchedule(monitor: MonitorRecord, language: "zh" | "en") {
+  const q = (z: string, e: string) => (language === "zh" ? z : e);
+  if (monitor.schedule === "hour")
+    return q(`每小时，${monitor.runTime} 起`, `Hourly from ${monitor.runTime}`);
+  if (monitor.schedule === "6h")
+    return q(
+      `每 6 小时，${monitor.runTime} 起`,
+      `Every 6 hours from ${monitor.runTime}`,
+    );
+  if (monitor.schedule === "day")
+    return q(`每天 ${monitor.runTime}`, `Daily at ${monitor.runTime}`);
+  if (monitor.schedule === "week")
+    return q(
+      `每周 ${["日", "一", "二", "三", "四", "五", "六"][Number(monitor.weekday)]} ${monitor.runTime}`,
+      `Weekly, day ${monitor.weekday} at ${monitor.runTime}`,
+    );
+  if (monitor.schedule === "month")
+    return q(
+      `每月 ${monitor.monthDay} 日 ${monitor.runTime}`,
+      `Monthly, day ${monitor.monthDay} at ${monitor.runTime}`,
+    );
+  return `Cron ${monitor.cron}`;
+}
+function formatDate(value: string | undefined, language: "zh" | "en") {
+  const date = value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime()))
+    return language === "zh" ? "未提供" : "Not provided";
+  return new Intl.DateTimeFormat(language === "zh" ? "zh-CN" : "en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+function useStateSafe(initial: string) {
+  return useState(initial);
+}
 
-function KeywordEditor({ monitor, language, onSave }: { monitor: MonitorRecord; language:"zh"|"en"; onSave:(id:string, include:string[], exclude:string[], regex:boolean)=>void }) {
+function KeywordEditor({
+  monitor,
+  language,
+  onSave,
+}: {
+  monitor: MonitorRecord;
+  language: "zh" | "en";
+  onSave: (
+    id: string,
+    include: string[],
+    exclude: string[],
+    regex: boolean,
+  ) => void;
+}) {
   const [include, setInclude] = useState(monitor.includeKeywords);
   const [exclude, setExclude] = useState(monitor.excludeKeywords);
   const [regex, setRegex] = useState(monitor.useRegex);
   const [includeInput, setIncludeInput] = useState("");
   const [excludeInput, setExcludeInput] = useState("");
   const [saved, setSaved] = useState(false);
-  const add = (value:string, values:string[], setter:(values:string[])=>void, clear:()=>void) => { const next=value.split(/[,，\n]/).map(item=>item.trim()).filter(Boolean); if(next.length) setter([...new Set([...values,...next])]); clear(); };
-  const save = () => { onSave(monitor.id, include, exclude, regex); setSaved(true); window.setTimeout(()=>setSaved(false),1600); };
-  const editor = (label:string, values:string[], setter:(values:string[])=>void, value:string, setValue:(value:string)=>void) => <div><label className="text-[11px] text-zinc-500">{label}</label><div className="mt-2 flex min-h-11 flex-wrap items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/40 p-2 focus-within:border-indigo-500">{values.map(item=><span key={item} className="inline-flex items-center rounded-md bg-indigo-500/10 px-2 py-1 text-xs text-indigo-300">{item}<button aria-label={`${language==="zh"?"删除":"Remove"} ${item}`} onClick={()=>setter(values.filter(current=>current!==item))} className="ml-2 hover:text-white"><X size={11}/></button></span>)}<input value={value} onChange={event=>setValue(event.target.value)} onKeyDown={event=>{if(event.key==="Enter"){event.preventDefault();add(value,values,setter,()=>setValue(""));}}} onBlur={()=>add(value,values,setter,()=>setValue(""))} className="min-w-36 flex-1 bg-transparent px-1 py-1 text-xs outline-none placeholder:text-zinc-600" placeholder={language==="zh"?"输入后按 Enter":"Type and press Enter"}/></div></div>;
-  return <article className="panel p-5"><div className="flex flex-col gap-5"><div className="flex items-center justify-between gap-3"><h3 className="truncate text-sm font-medium">{monitor.name}</h3><Button onClick={save} variant="secondary"><Save size={13}/>{saved?(language==="zh"?"已保存":"Saved"):(language==="zh"?"保存":"Save")}</Button></div><div className="grid gap-4 lg:grid-cols-2">{editor(language==="zh"?"包含关键词":"Include keywords",include,setInclude,includeInput,setIncludeInput)}{editor(language==="zh"?"排除关键词":"Exclude keywords",exclude,setExclude,excludeInput,setExcludeInput)}</div><label className="flex items-center justify-between rounded-lg border border-zinc-800 px-3 py-2.5 text-xs text-zinc-400"><span>{language==="zh"?"使用正则表达式":"Use regular expressions"}</span><input type="checkbox" checked={regex} onChange={event=>setRegex(event.target.checked)} className="h-4 w-4 accent-indigo-500"/></label></div></article>;
+  const add = (
+    value: string,
+    values: string[],
+    setter: (values: string[]) => void,
+    clear: () => void,
+  ) => {
+    const next = value
+      .split(/[,，\n]/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+    if (next.length) setter([...new Set([...values, ...next])]);
+    clear();
+  };
+  const save = () => {
+    onSave(monitor.id, include, exclude, regex);
+    setSaved(true);
+    window.setTimeout(() => setSaved(false), 1600);
+  };
+  const editor = (
+    label: string,
+    values: string[],
+    setter: (values: string[]) => void,
+    value: string,
+    setValue: (value: string) => void,
+  ) => (
+    <div>
+      <label className="text-[11px] text-zinc-500">{label}</label>
+      <div className="mt-2 flex min-h-11 flex-wrap items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/40 p-2 focus-within:border-indigo-500">
+        {values.map((item) => (
+          <span
+            key={item}
+            className="inline-flex items-center rounded-md bg-indigo-500/10 px-2 py-1 text-xs text-indigo-300"
+          >
+            {item}
+            <button
+              aria-label={`${language === "zh" ? "删除" : "Remove"} ${item}`}
+              onClick={() =>
+                setter(values.filter((current) => current !== item))
+              }
+              className="ml-2 hover:text-white"
+            >
+              <X size={11} />
+            </button>
+          </span>
+        ))}
+        <input
+          value={value}
+          onChange={(event) => setValue(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              add(value, values, setter, () => setValue(""));
+            }
+          }}
+          onBlur={() => add(value, values, setter, () => setValue(""))}
+          className="min-w-36 flex-1 bg-transparent px-1 py-1 text-xs outline-none placeholder:text-zinc-600"
+          placeholder={
+            language === "zh" ? "输入后按 Enter" : "Type and press Enter"
+          }
+        />
+      </div>
+    </div>
+  );
+  return (
+    <article className="panel p-5">
+      <div className="flex flex-col gap-5">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="truncate text-sm font-medium">{monitor.name}</h3>
+          <Button onClick={save} variant="secondary">
+            <Save size={13} />
+            {saved
+              ? language === "zh"
+                ? "已保存"
+                : "Saved"
+              : language === "zh"
+                ? "保存"
+                : "Save"}
+          </Button>
+        </div>
+        <div className="grid gap-4 lg:grid-cols-2">
+          {editor(
+            language === "zh" ? "包含关键词" : "Include keywords",
+            include,
+            setInclude,
+            includeInput,
+            setIncludeInput,
+          )}
+          {editor(
+            language === "zh" ? "排除关键词" : "Exclude keywords",
+            exclude,
+            setExclude,
+            excludeInput,
+            setExcludeInput,
+          )}
+        </div>
+        <label className="flex items-center justify-between rounded-lg border border-zinc-800 px-3 py-2.5 text-xs text-zinc-400">
+          <span>
+            {language === "zh" ? "使用正则表达式" : "Use regular expressions"}
+          </span>
+          <input
+            type="checkbox"
+            checked={regex}
+            onChange={(event) => setRegex(event.target.checked)}
+            className="h-4 w-4 accent-indigo-500"
+          />
+        </label>
+      </div>
+    </article>
+  );
 }
 
-function DestinationEditor({ monitor, language, onSave }: { monitor:MonitorRecord; language:"zh"|"en"; onSave:(id:string, configs:DestinationConfig[])=>void }) {
-  const options: {type:DestinationType; name:string; hint:string; placeholder:string}[] = [
-    {type:"telegram",name:"Telegram",hint:language==="zh"?"Bot Token 与 Chat ID":"Bot token and chat ID",placeholder:"bot_token : chat_id"},
-    {type:"discord",name:"Discord",hint:language==="zh"?"频道 Incoming Webhook":"Channel incoming webhook",placeholder:"https://discord.com/api/webhooks/..."},
-    {type:"slack",name:"Slack",hint:language==="zh"?"工作区 Incoming Webhook":"Workspace incoming webhook",placeholder:"https://hooks.slack.com/services/..."},
-    {type:"webhook",name:"Webhook",hint:language==="zh"?"接收 POST 请求的 HTTPS 地址":"HTTPS endpoint receiving POST requests",placeholder:"https://example.com/vector-webhook"},
-    {type:"wecom",name:language==="zh"?"企业微信":"WeCom",hint:language==="zh"?"群机器人 Webhook":"Group bot webhook",placeholder:"https://qyapi.weixin.qq.com/cgi-bin/webhook/..."},
-    {type:"feishu",name:language==="zh"?"飞书":"Feishu",hint:language==="zh"?"群机器人 Webhook":"Group bot webhook",placeholder:"https://open.feishu.cn/open-apis/bot/v2/hook/..."},
+function DestinationEditor({
+  monitor,
+  language,
+  onSave,
+}: {
+  monitor: MonitorRecord;
+  language: "zh" | "en";
+  onSave: (id: string, configs: DestinationConfig[]) => void;
+}) {
+  const options: {
+    type: DestinationType;
+    name: string;
+    hint: string;
+    placeholder: string;
+  }[] = [
+    {
+      type: "telegram",
+      name: "Telegram",
+      hint:
+        language === "zh" ? "Bot Token 与 Chat ID" : "Bot token and chat ID",
+      placeholder: "bot_token : chat_id",
+    },
+    {
+      type: "discord",
+      name: "Discord",
+      hint:
+        language === "zh"
+          ? "频道 Incoming Webhook"
+          : "Channel incoming webhook",
+      placeholder: "https://discord.com/api/webhooks/...",
+    },
+    {
+      type: "slack",
+      name: "Slack",
+      hint:
+        language === "zh"
+          ? "工作区 Incoming Webhook"
+          : "Workspace incoming webhook",
+      placeholder: "https://hooks.slack.com/services/...",
+    },
+    {
+      type: "webhook",
+      name: "Webhook",
+      hint:
+        language === "zh"
+          ? "接收 POST 请求的 HTTPS 地址"
+          : "HTTPS endpoint receiving POST requests",
+      placeholder: "https://example.com/vector-webhook",
+    },
+    {
+      type: "wecom",
+      name: language === "zh" ? "企业微信" : "WeCom",
+      hint: language === "zh" ? "群机器人 Webhook" : "Group bot webhook",
+      placeholder: "https://qyapi.weixin.qq.com/cgi-bin/webhook/...",
+    },
+    {
+      type: "feishu",
+      name: language === "zh" ? "飞书" : "Feishu",
+      hint: language === "zh" ? "群机器人 Webhook" : "Group bot webhook",
+      placeholder: "https://open.feishu.cn/open-apis/bot/v2/hook/...",
+    },
   ];
-  const legacyConfigs: DestinationConfig[] = options.map(option=>({type:option.type,value:"",enabled:false}));
-  const [configs,setConfigs]=useState<DestinationConfig[]>(monitor.destinationConfigs?.length ? monitor.destinationConfigs : legacyConfigs);
-  const [saved,setSaved]=useState(false);
-  const change=(type:DestinationType,patch:Partial<DestinationConfig>)=>setConfigs(current=>current.map(item=>item.type===type?{...item,...patch}:item));
-  const save=()=>{onSave(monitor.id,configs.map(item=>({...item,value:item.value.trim()})));setSaved(true);window.setTimeout(()=>setSaved(false),1600);};
-  return <article className="panel p-5"><div className="flex items-center justify-between gap-3"><div><h3 className="truncate text-sm font-medium">{monitor.name}</h3><p className="mt-1 text-[11px] text-zinc-600">{language==="zh"?`${configs.filter(item=>item.enabled).length} 个渠道已启用`:`${configs.filter(item=>item.enabled).length} channels enabled`}</p></div><Button onClick={save} variant="secondary"><Save size={13}/>{saved?(language==="zh"?"已保存":"Saved"):(language==="zh"?"保存全部":"Save all")}</Button></div><div className="mt-5 grid gap-3 lg:grid-cols-2">{options.map(option=>{const config=configs.find(item=>item.type===option.type)??{type:option.type,value:"",enabled:false};return <section key={option.type} className={config.enabled?"rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-4":"rounded-xl border border-zinc-800 bg-zinc-900/20 p-4"}><div className="flex items-center justify-between gap-3"><div><div className="text-xs font-medium">{option.name}</div><div className="mt-1 text-[10px] text-zinc-600">{option.hint}</div></div><button type="button" role="switch" aria-checked={config.enabled} onClick={()=>change(option.type,{enabled:!config.enabled})} className={config.enabled?"flex h-5 w-9 items-center rounded-full bg-indigo-500 p-0.5":"flex h-5 w-9 items-center rounded-full bg-zinc-700 p-0.5"}><span className={config.enabled?"h-4 w-4 translate-x-4 rounded-full bg-white transition-transform":"h-4 w-4 rounded-full bg-white transition-transform"}/></button></div><input value={config.value} disabled={!config.enabled} onChange={event=>change(option.type,{value:event.target.value})} className="mt-3 h-9 w-full rounded-lg border border-zinc-800 bg-zinc-950/50 px-3 text-[11px] outline-none placeholder:text-zinc-700 focus:border-indigo-500 disabled:cursor-not-allowed disabled:opacity-40" placeholder={option.placeholder}/></section>})}</div><p className="mt-4 text-[10px] leading-5 text-zinc-600">{language==="zh"?"各渠道配置独立保存。启用渠道不代表已验证连接，只有实际发送成功后才会记录通知。":"Each channel is saved independently. Enabling a channel does not claim a verified connection; deliveries are recorded only after a real send succeeds."}</p></article>;
+  const legacyConfigs: DestinationConfig[] = options.map((option) => ({
+    type: option.type,
+    value: "",
+    enabled: false,
+  }));
+  const [configs, setConfigs] = useState<DestinationConfig[]>(
+    monitor.destinationConfigs?.length
+      ? monitor.destinationConfigs
+      : legacyConfigs,
+  );
+  const [saved, setSaved] = useState(false);
+  const change = (type: DestinationType, patch: Partial<DestinationConfig>) =>
+    setConfigs((current) =>
+      current.map((item) =>
+        item.type === type ? { ...item, ...patch } : item,
+      ),
+    );
+  const save = () => {
+    onSave(
+      monitor.id,
+      configs.map((item) => ({ ...item, value: item.value.trim() })),
+    );
+    setSaved(true);
+    window.setTimeout(() => setSaved(false), 1600);
+  };
+  return (
+    <article className="panel p-5">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h3 className="truncate text-sm font-medium">{monitor.name}</h3>
+          <p className="mt-1 text-[11px] text-zinc-600">
+            {language === "zh"
+              ? `${configs.filter((item) => item.enabled).length} 个渠道已启用`
+              : `${configs.filter((item) => item.enabled).length} channels enabled`}
+          </p>
+        </div>
+        <Button onClick={save} variant="secondary">
+          <Save size={13} />
+          {saved
+            ? language === "zh"
+              ? "已保存"
+              : "Saved"
+            : language === "zh"
+              ? "保存全部"
+              : "Save all"}
+        </Button>
+      </div>
+      <div className="mt-5 grid gap-3 lg:grid-cols-2">
+        {options.map((option) => {
+          const config = configs.find((item) => item.type === option.type) ?? {
+            type: option.type,
+            value: "",
+            enabled: false,
+          };
+          return (
+            <section
+              key={option.type}
+              className={
+                config.enabled
+                  ? "rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-4"
+                  : "rounded-xl border border-zinc-800 bg-zinc-900/20 p-4"
+              }
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-xs font-medium">{option.name}</div>
+                  <div className="mt-1 text-[10px] text-zinc-600">
+                    {option.hint}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={config.enabled}
+                  onClick={() =>
+                    change(option.type, { enabled: !config.enabled })
+                  }
+                  className={
+                    config.enabled
+                      ? "flex h-5 w-9 items-center rounded-full bg-indigo-500 p-0.5"
+                      : "flex h-5 w-9 items-center rounded-full bg-zinc-700 p-0.5"
+                  }
+                >
+                  <span
+                    className={
+                      config.enabled
+                        ? "h-4 w-4 translate-x-4 rounded-full bg-white transition-transform"
+                        : "h-4 w-4 rounded-full bg-white transition-transform"
+                    }
+                  />
+                </button>
+              </div>
+              <input
+                value={config.value}
+                disabled={!config.enabled}
+                onChange={(event) =>
+                  change(option.type, { value: event.target.value })
+                }
+                className="mt-3 h-9 w-full rounded-lg border border-zinc-800 bg-zinc-950/50 px-3 text-[11px] outline-none placeholder:text-zinc-700 focus:border-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
+                placeholder={option.placeholder}
+              />
+            </section>
+          );
+        })}
+      </div>
+      <p className="mt-4 text-[10px] leading-5 text-zinc-600">
+        {language === "zh"
+          ? "各渠道配置独立保存。启用渠道不代表已验证连接，只有实际发送成功后才会记录通知。"
+          : "Each channel is saved independently. Enabling a channel does not claim a verified connection; deliveries are recorded only after a real send succeeds."}
+      </p>
+    </article>
+  );
 }
